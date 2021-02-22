@@ -21,8 +21,10 @@ func init() {
 
 func TestAccResourceFastlyTLSSubscription(t *testing.T) {
 	name := acctest.RandomWithPrefix(testResourcePrefix)
-	domain := fmt.Sprintf("%s.test", name)
+	domain1 := fmt.Sprintf("%s.test", name)
 	domain2 := fmt.Sprintf("%sALT.test", name)
+	commonName1 := domain1
+	commonName2 := domain2
 
 	resourceName := "fastly_tls_subscription.subject"
 	resource.ParallelTest(t, resource.TestCase{
@@ -30,7 +32,7 @@ func TestAccResourceFastlyTLSSubscription(t *testing.T) {
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceFastlyTLSSubscriptionConfig(name, domain, domain2, domain),
+				Config: testAccResourceFastlyTLSSubscriptionConfig(name, domain1, domain2, commonName1),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "configuration_id"),
 					resource.TestCheckResourceAttrSet(resourceName, "created_at"),
@@ -38,12 +40,12 @@ func TestAccResourceFastlyTLSSubscription(t *testing.T) {
 					resource.TestCheckResourceAttrSet(resourceName, "state"),
 					resource.TestCheckResourceAttr(resourceName, "managed_dns_challenge.%", "3"),
 					resource.TestCheckResourceAttrSet(resourceName, "managed_http_challenges.#"),
-					resource.TestCheckResourceAttr(resourceName, "common_name", domain),
+					resource.TestCheckResourceAttr(resourceName, "common_name", domain1),
 					testAccResourceFastlyTLSSubscriptionExists(resourceName),
 				),
 			},
 			{
-				Config: testAccResourceFastlyTLSSubscriptionConfig(name, domain, domain2, domain2),
+				Config: testAccResourceFastlyTLSSubscriptionConfig(name, domain1, domain2, commonName2),
 				Check:  resource.TestCheckResourceAttr(resourceName, "common_name", domain2),
 			},
 			{
@@ -60,7 +62,7 @@ func TestAccResourceFastlyTLSSubscription(t *testing.T) {
 	})
 }
 
-func testAccResourceFastlyTLSSubscriptionConfig(name, domain, domain2, commonName string) string {
+func testAccResourceFastlyTLSSubscriptionConfig(name, domain1, domain2, commonName string) string {
 	return fmt.Sprintf(`
 resource "fastly_service_v1" "test" {
   name = "%s"
@@ -85,7 +87,7 @@ resource "fastly_tls_subscription" "subject" {
   common_name = "%s"
   certificate_authority = "lets-encrypt"
 }
-`, name, domain, domain2, commonName)
+`, name, domain1, domain2, commonName)
 }
 
 func testAccResourceFastlyTLSSubscriptionExists(resourceName string) resource.TestCheckFunc {
